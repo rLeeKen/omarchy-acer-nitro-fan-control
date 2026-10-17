@@ -2,12 +2,12 @@
 set -eo pipefail
 
 ###############################################################################
-# Установщик плагина Nitro Fans для Omarchy
-# Ноутбук: Acer Nitro AN515-44
+# Nitro Fans plugin installer for Omarchy
+# Laptop: Acer Nitro AN515-44
 #
-# Устанавливает виджет nitro.fans в ~/.config/omarchy/plugins,
-# добавляет его в shell.json и спрашивает, куда разместить popup на панели:
-# слева / справа / по центру — не заменяя виджеты других плагинов.
+# Installs the nitro.fans widget into ~/.config/omarchy/plugins,
+# adds it to shell.json and asks where to place the popup on the panel:
+# left / right / center — without replacing widgets of other plugins.
 ###############################################################################
 
 OMARCHY_PLUGINS_DIR="$HOME/.config/omarchy/plugins"
@@ -18,98 +18,111 @@ PLUGIN_SRC="$SCRIPT_DIR/plugins/$PLUGIN_ID"
 REPO_URL="https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
 
 echo "============================================================"
-echo "  Установка плагина Nitro Fans для Omarchy"
-echo "  Ноутбук: Acer Nitro AN515-44"
+echo "  Installing Nitro Fans plugin for Omarchy"
+echo "  Laptop: Acer Nitro AN515-44"
 echo "============================================================"
 echo
 
-# -------- проверки -------------------------------------------------------------
-need_cmd() { command -v "$1" >/dev/null 2>&1; }
+# -------- checks --------------------------------------------------------------
+have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
-if ! need_cmd omarchy; then
-  echo "ОШИБКА: omarchy не найден в PATH. Установите Omarchy сначала."
+if ! have_cmd omarchy; then
+  echo "ERROR: omarchy not found in PATH. Install Omarchy first."
   exit 1
 fi
 
-if ! need_cmd jq; then
-  echo "ОШИБКА: jq не найден. Установите jq."
+if ! have_cmd jq; then
+  echo "ERROR: jq not found. Install jq first."
   exit 1
 fi
 
 mkdir -p "$OMARCHY_PLUGINS_DIR"
 
-# -------- пакеты ---------------------------------------------------------------
-echo "==> Проверка необходимых пакетов..."
+# -------- required packages ----------------------------------------------------
+echo "==> Checking required packages..."
 MISSING=0
+
 if ! pacman -Q nbfc >/dev/null 2>&1 && ! yay -Q nbfc >/dev/null 2>&1; then
-  echo "   [отсутствует] nbfc  (AUR: nbfc-linux — чтение оборотов вентиляторов)"
+  echo "   [missing] nbfc        (AUR: nbfc-linux — reads fan speeds)"
   MISSING=1
 fi
-if ! need_cmd nitro-fan && [ ! -x "$HOME/.local/bin/nitro-fan" ]; then
-  echo "   [отсутствует] nitro-fan  (PATH или ~/.local/bin/nitro-fan — переключение режимов)"
+
+if ! have_cmd nitro-fan && [ ! -x "$HOME/.local/bin/nitro-fan" ]; then
+  echo "   [missing] nitro-fan   (PATH or ~/.local/bin/nitro-fan — switches fan modes)"
   MISSING=1
 fi
 
 if [ "$MISSING" -eq 1 ]; then
   echo
-  read -rp "Установить недостающие пакеты через yay? (y/N): " ans
+  read -rp "Install missing packages via yay? (y/N): " ans
+  echo
   if [[ "$ans" =~ ^[Yy]$ ]]; then
-    yay -S --needed nbfc-linux || true
-    if ! need_cmd nitro-fan && [ ! -x "$HOME/.local/bin/nitro-fan" ]; then
-      echo
-      echo "Внимание: nitro-fan не установлен автоматически."
-      echo "Установите его вручную (AUR: nitro-fan) или положите бинарник в ~/.local/bin/nitro-fan"
+    if ! have_cmd yay; then
+      echo "ERROR: yay is not installed. Install yay (AUR helper) first, then re-run this script."
+      echo "See: https://github.com/Jguer/yay"
+      exit 1
     fi
+    echo "==> Installing nbfc-linux ..."
+    yay -S --needed nbfc-linux || echo "WARNING: failed to install nbfc-linux via yay."
+    echo
+    if ! have_cmd nitro-fan && [ ! -x "$HOME/.local/bin/nitro-fan" ]; then
+      echo "WARNING: nitro-fan was not installed automatically."
+      echo "Install it manually (AUR: nitro-fan) or place the binary at ~/.local/bin/nitro-fan"
+    fi
+  else
+    echo "==> Skipping package installation. The plugin may not work without nbfc and nitro-fan."
   fi
+else
+  echo "   All required packages are present."
 fi
 echo
 
-# -------- копирование плагина --------------------------------------------------
+# -------- copy plugin ----------------------------------------------------------
 if [ -d "$PLUGIN_SRC" ]; then
-  # запуск из клонированного репозитория
-  echo "==> Копирование плагина в $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
+  # running from cloned repository
+  echo "==> Copying plugin to $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
   rm -rf "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
   cp -r "$PLUGIN_SRC" "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
 else
-  # однострочник через curl: плагина рядом нет — клонируем репозиторий
-  echo "==> Клонирование репозитория $REPO_URL ..."
+  # one-liner via curl: plugin not next to script — clone the repository
+  echo "==> Cloning repository $REPO_URL ..."
   TMP_DIR="$(mktemp -d)"
   git clone --depth=1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1
-  echo "==> Копирование плагина в $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
+  echo "==> Copying plugin to $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
   rm -rf "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
   cp -r "$TMP_DIR/plugins/$PLUGIN_ID" "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
   rm -rf "$TMP_DIR"
 fi
-echo "   Плагин установлен."
+echo "   Plugin installed."
 
-# -------- бэкап shell.json -----------------------------------------------------
+# -------- backup shell.json ----------------------------------------------------
 if [ -f "$SHELL_JSON" ]; then
   ts="$(date +%Y%m%d-%H%M%S)"
   cp "$SHELL_JSON" "$SHELL_JSON.bak.$ts"
-  echo "==> Бэкап: $SHELL_JSON.bak.$ts"
+  echo "==> Backup: $SHELL_JSON.bak.$ts"
 fi
 
-# -------- добавить плагин в массив plugins -------------------------------------
+# -------- add plugin to plugins array ------------------------------------------
 if [ -f "$SHELL_JSON" ]; then
-  echo "==> Добавление плагина в omarchy shell.json ..."
+  echo "==> Adding plugin to omarchy shell.json ..."
   tmp="$(mktemp)"
   jq '
     .plugins = ([.plugins[] | select((.id // "") != "nitro.fans")] + [{"id":"nitro.fans"}])
   ' "$SHELL_JSON" > "$tmp" && mv "$tmp" "$SHELL_JSON"
-  echo "   Плагин nitro.fans добавлен в массив plugins."
+  echo "   Plugin nitro.fans added to plugins array."
 else
-  echo "   ВНИМАНИЕ: $SHELL_JSON не найден. Добавьте {\"id\":\"nitro.fans\"} в массив plugins вручную."
+  echo "   WARNING: $SHELL_JSON not found. Add {\"id\":\"nitro.fans\"} to plugins manually."
 fi
 
-# -------- выбор позиции popup на панели ----------------------------------------
+# -------- choose popup position on panel ---------------------------------------
 echo
 echo "============================================================"
-echo "  Куда разместить popup с вентиляторами на панели Omarchy?"
-echo "  1) Слева   (left)"
-echo "  2) Справа  (right)"
-echo "  3) По центру (center)"
+echo "  Where to place the fan popup on the Omarchy panel?"
+echo "  1) Left   (left)"
+echo "  2) Right  (right)"
+echo "  3) Center (center)"
 echo "============================================================"
-read -rp "Введите 1/2/3 [по умолчанию 2 - справа]: " pos
+read -rp "Enter 1/2/3 [default: 2 - right]: " pos
 case "$pos" in
   1) section="left" ;;
   3) section="center" ;;
@@ -117,33 +130,33 @@ case "$pos" in
 esac
 
 if [ -f "$SHELL_JSON" ]; then
-  echo "==> Размещение виджета nitro.fans в секции '$section' панели ..."
+  echo "==> Placing widget nitro.fans in section '$section' of the panel ..."
   tmp="$(mktemp)"
   jq --arg sec "$section" '
-    # не трогаем виджеты других плагинов, убираем только возможные дубли nitro.fans
+    # do not touch widgets of other plugins, remove only possible nitro.fans duplicates
     .bar.layout.left  = ([.bar.layout.left  [] | select((.id // "") != "nitro.fans")]) |
     .bar.layout.center= ([.bar.layout.center[] | select((.id // "") != "nitro.fans")]) |
     .bar.layout.right = ([.bar.layout.right [] | select((.id // "") != "nitro.fans")]) |
-    # добавляем нитро-фана в конец выбранной секции
+    # add nitro.fans at the end of the chosen section
     .bar.layout[$sec] += [{"id":"nitro.fans"}]
   ' "$SHELL_JSON" > "$tmp" && mv "$tmp" "$SHELL_JSON"
-  echo "   Виджет nitro.fans добавлен в секцию '$section' (конец секции)."
+  echo "   Widget nitro.fans added to section '$section' (end of section)."
 else
-  echo "   ВНИМАНИЕ: добавьте {\"id\":\"nitro.fans\"} в нужную секцию bar.layout вручную."
+  echo "   WARNING: add {\"id\":\"nitro.fans\"} to the desired bar.layout section manually."
 fi
 
-# -------- завершение -----------------------------------------------------------
+# -------- finish ---------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  Установка завершена!"
+echo "  Installation complete!"
 echo "============================================================"
 echo
-echo "Перезапустите оболочку Omarchy, чтобы применить изменения:"
+echo "Restart the Omarchy shell to apply changes:"
 echo "    omarchy restart shell"
 echo
-echo "После этого виджет Nitro Fans появится на панели (секция: $section)."
-echo "Открыть popup — кликом по иконке виджета на панели."
+echo "After that, the Nitro Fans widget will appear on the panel (section: $section)."
+echo "Open the popup by clicking the widget icon on the panel."
 echo
-echo "Удаление:"
+echo "Uninstall:"
 echo "    rm -rf $OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
 echo "    omarchy restart shell"

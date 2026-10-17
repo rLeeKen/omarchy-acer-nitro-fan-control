@@ -1,21 +1,21 @@
-# Установка плагина Nitro Fans (Omarchy, Acer Nitro AN515-44)
+# Install Nitro Fans plugin (Omarchy, Acer Nitro AN515-44)
 
-## Предварительные требования
+## Prerequisites
 
-- [Omarchy](https://github.com/omarchy/omarchy) установлен и запущен
-- `nbfc` (`nbfc-linux` из AUR) — чтение оборотов вентиляторов
-- `nitro-fan` — переключение режимов вентилятора
+- [Omarchy](https://github.com/omarchy/omarchy) installed and running
+- `nbfc` (`nbfc-linux` from AUR) — reads fan speeds
+- `nitro-fan` — switches fan modes
 - `git`, `yay` (AUR helper), `curl`
 
-## Установка
+## Installation
 
-### Одной командой
+### One-liner
 
 ```bash
 bash -c "$(curl -fsSL https://github.com/rLeeKen/omarchy-acer-nitro-fan-control/raw/main/install.sh)"
 ```
 
-### Вручную
+### Manual
 
 ```bash
 git clone https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git
@@ -24,21 +24,23 @@ chmod +x install.sh
 ./install.sh
 ```
 
-## На конце установки
+## At the end of installation
 
-Установщик спросит, куда разместить popup с вентиляторами на панели:
-слева / справа / по центру.
+The installer will ask where to place the fan popup on the Omarchy panel:
 
-Виджет добавляется в конец выбранной секции `bar.layout` в
-`~/.config/omarchy/shell.json` без замены виджетов других плагинов.
+1. Left (`left`)
+2. Right (`right`)
+3. Center (`center`)
 
-## Применить
+Choose an option — the widget will be added to the end of the chosen `bar.layout` section in `~/.config/omarchy/shell.json` **without replacing widgets of other plugins**.
+
+### Apply changes
 
 ```bash
 omarchy restart shell
 ```
 
-## Удаление
+## Uninstall
 
 ```bash
 rm -rf ~/.config/omarchy/plugins/nitro.fans

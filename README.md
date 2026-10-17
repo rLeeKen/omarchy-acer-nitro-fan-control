@@ -1,4 +1,4 @@
-# chmonya Omarchy Plugins
+# Nitro Omarchy Plugins
 
 Custom Omarchy plugins for Acer Nitro AN515-44 and network enhancements.
 
@@ -6,18 +6,18 @@ Custom Omarchy plugins for Acer Nitro AN515-44 and network enhancements.
 
 | Plugin            | Description |
 |-------------------|-------------|
-| `chmonya.fans`    | Nitro fan control (nbfc + nitro-fan) with presets, speed slider,     keyboard navigation, and temperature warnings |
-| `chmonya.network` | Wi-Fi network popup with "Forget network" support |
+| `nitro.fans`      | Nitro fan control (nbfc + nitro-fan) with presets, speed slider,     keyboard navigation, and temperature warnings |
+| `nitro.network`   | Wi-Fi network popup with "Forget network" support |
 
 ## Screenshots
 
-![Fans popup](https://raw.githubusercontent.com/rLeeKen/chmonya-omarchy-plugins/main/screenshots/fans.png)
-![Network popup](https://raw.githubusercontent.com/rLeeKen/chmonya-omarchy-plugins/main/screenshots/network.png)
+![Fans popup](https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/screenshots/fans.png)
+![Network popup](https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/screenshots/network.png)
 
 ## Requirements
 
 - Omarchy installed and running
-- For `chmonya.fans`: `nitro-fan` and `nbfc` packages installed
+- For `nitro.fans`: `nitro-fan` and `nbfc` packages installed
 - Git (for installation)
 
 ## Installation
@@ -25,14 +25,14 @@ Custom Omarchy plugins for Acer Nitro AN515-44 and network enhancements.
 ### One-liner
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/rLeeKen/chmonya-omarchy-plugins/main/install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/install.sh)"
 ```
 
 ### Manual
 
 ```bash
-git clone https://github.com/rLeeKen/chmonya-omarchy-plugins.git
-cd chmonya-omarchy-plugins
+git clone https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git
+cd omarchy-acer-nitro-fan-control
 chmod +x install.sh
 ./install.sh
 ```

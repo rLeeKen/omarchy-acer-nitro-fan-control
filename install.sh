@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# chmonya Omarchy plugins installer
+# Nitro Omarchy plugins installer
 # Installs custom Omarchy plugins into ~/.config/omarchy/plugins
 
 OMARCHY_PLUGINS_DIR="${HOME}/.config/omarchy/plugins"
-REPO_URL="https://github.com/rLeeKen/chmonya-omarchy-plugins.git"
+REPO_URL="https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
 TMP_DIR="$(mktemp -d)"
 
-echo "==> chmonya Omarchy plugins installer"
+echo "==> Nitro Omarchy plugins installer"
 echo "==> Target: ${OMARCHY_PLUGINS_DIR}"
 
 mkdir -p "${OMARCHY_PLUGINS_DIR}"

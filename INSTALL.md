@@ -4,21 +4,21 @@
 
 - [Omarchy](https://github.com/omarchy/omarchy) installed and running
 - Git
-- For `chmonya.fans`: `nitro-fan` and `nbfc` packages
+- For `nitro.fans`: `nitro-fan` and `nbfc` packages
 
 ## Install
 
 ### Option 1: One-liner (recommended)
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/rLeeKen/chmonya-omarchy-plugins/main/install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/install.sh)"
 ```
 
 ### Option 2: Manual
 
 ```bash
-git clone https://github.com/rLeeKen/chmonya-omarchy-plugins.git
-cd chmonya-omarchy-plugins
+git clone https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git
+cd omarchy-acer-nitro-fan-control
 chmod +x install.sh
 ./install.sh
 ```
@@ -34,7 +34,7 @@ omarchy restart shell
 ## Uninstall
 
 ```bash
-rm -rf ~/.config/omarchy/plugins/chmonya.fans
-rm -rf ~/.config/omarchy/plugins/chmonya.network
+rm -rf ~/.config/omarchy/plugins/nitro.fans
+rm -rf ~/.config/omarchy/plugins/nitro.network
 omarchy restart shell
 ```

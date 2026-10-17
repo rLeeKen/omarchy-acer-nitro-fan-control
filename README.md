@@ -7,12 +7,10 @@ Custom Omarchy plugins for Acer Nitro AN515-44 and network enhancements.
 | Plugin            | Description |
 |-------------------|-------------|
 | `nitro.fans`      | Nitro fan control (nbfc + nitro-fan) with presets, speed slider,     keyboard navigation, and temperature warnings |
-| `nitro.network`   | Wi-Fi network popup with "Forget network" support |
 
 ## Screenshots
 
 ![Fans popup](https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/screenshots/fans.png)
-![Network popup](https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/screenshots/network.png)
 
 ## Requirements
 

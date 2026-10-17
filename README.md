@@ -4,13 +4,15 @@ Custom Omarchy plugins for Acer Nitro AN515-44 and network enhancements.
 
 ## Plugins
 
-| Plugin            | Description |
-|-------------------|-------------|
-| `nitro.fans`      | Nitro fan control (nbfc + nitro-fan) with presets, speed slider,     keyboard navigation, and temperature warnings |
+| Plugin | Description |
+|--------|-------------|
+| `nitro.fans` | Nitro fan control (nbfc + nitro-fan) with presets, speed slider, keyboard navigation, and temperature warnings |
+| `nitro.network` | Wi-Fi network popup with "Forget network" support |
 
 ## Screenshots
 
-![Fans popup](https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/screenshots/fans.png)
+![Fans popup](https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control/-/raw/main/screenshots/fans.png)
+![Network popup](https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control/-/raw/main/screenshots/network.png)
 
 ## Requirements
 
@@ -23,13 +25,13 @@ Custom Omarchy plugins for Acer Nitro AN515-44 and network enhancements.
 ### One-liner
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/install.sh)"
+bash -c "$(curl -fsSL https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control/-/raw/main/install.sh)"
 ```
 
 ### Manual
 
 ```bash
-git clone https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git
+git clone https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control.git
 cd omarchy-acer-nitro-fan-control
 chmod +x install.sh
 ./install.sh
@@ -56,6 +58,11 @@ Open the fan popup (default keybind: `SUPER+SPACE` or your configured key).
 - `↑` from slider — jump to Auto mode
 - `Enter` — apply selected preset or slider value
 
+### Network plugin
+
+Open the network popup from the bar widget.
+
+- Click the forget icon (🗙) on a saved network to remove its profile and password.
 
 ## License
 

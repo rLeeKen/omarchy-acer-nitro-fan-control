@@ -5,7 +5,7 @@ set -euo pipefail
 # Installs custom Omarchy plugins into ~/.config/omarchy/plugins
 
 OMARCHY_PLUGINS_DIR="${HOME}/.config/omarchy/plugins"
-REPO_URL="https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
+REPO_URL="https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
 TMP_DIR="$(mktemp -d)"
 
 echo "==> Nitro Omarchy plugins installer"

@@ -11,13 +11,13 @@
 ### Option 1: One-liner (recommended)
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/rLeeKen/omarchy-acer-nitro-fan-control/main/install.sh)"
+bash -c "$(curl -fsSL https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control/-/raw/main/install.sh)"
 ```
 
 ### Option 2: Manual
 
 ```bash
-git clone https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git
+git clone https://gitlab.com/rLeeKen/omarchy-acer-nitro-fan-control.git
 cd omarchy-acer-nitro-fan-control
 chmod +x install.sh
 ./install.sh

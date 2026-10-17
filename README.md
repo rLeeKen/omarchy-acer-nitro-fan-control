@@ -58,11 +58,6 @@ Open the fan popup (default keybind: `SUPER+SPACE` or your configured key).
 - `↑` from slider — jump to Auto mode
 - `Enter` — apply selected preset or slider value
 
-### Network plugin
-
-Open the network popup from the bar widget.
-
-- Click the forget icon (🗙) on a saved network to remove its profile and password.
 
 ## License
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 ###############################################################################
 # Установщик плагина Nitro Fans для Omarchy
@@ -13,7 +13,7 @@ set -euo pipefail
 OMARCHY_PLUGINS_DIR="$HOME/.config/omarchy/plugins"
 SHELL_JSON="$HOME/.config/omarchy/shell.json"
 PLUGIN_ID="nitro.fans"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd) || true"
 PLUGIN_SRC="$SCRIPT_DIR/plugins/$PLUGIN_ID"
 REPO_URL="https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
 

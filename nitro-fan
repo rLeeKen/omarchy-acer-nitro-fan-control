@@ -1,0 +1,166 @@
+#!/bin/bash
+# nitro-fan: backend for Acer Nitro AN515-44 (Ryzen 4600H + GTX 1650) on Omarchy/Arch
+# Tries nbfc-linux for real EC fan control, falls back to powerprofilesctl + ryzenadj
+# (which shift the stock fan curve). Never fails hard: always prints temps + mode.
+#
+# Usage:
+#   nitro-fan status          show temps, mode, backend state
+#   nitro-fan auto|quiet|balanced|performance|turbo
+#   nitro-fan set <0-100>     manual percent (nbfc only)
+#   nitro-fan cycle           rotate auto -> quiet -> balanced -> performance -> turbo
+#
+# State: ~/.local/state/nitro-fan/mode
+
+set -u
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/nitro-fan"
+MODE_FILE="$STATE_DIR/mode"
+mkdir -p "$STATE_DIR"
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+get_mode() { [[ -r $MODE_FILE ]] && cat "$MODE_FILE" || echo "auto"; }
+set_mode() { printf '%s\n' "$1" >"$MODE_FILE"; }
+
+cpu_temp() {
+  # k10temp Tctl
+  awk '/Tctl/ {gsub(/[^0-9.]/,"",$2); print $2; exit}' <(sensors 2>/dev/null) 2>/dev/null
+}
+gpu_temp() {
+  sensors 2>/dev/null | awk '/edge/ {gsub(/[^0-9.]/,"",$2); print $2; exit}'
+}
+nvidia_temp() {
+  nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader 2>/dev/null | tr -d ' \n'
+}
+
+apply_powerprofile_fallback() {
+  # Map our modes to powerprofilesctl so stock EC curve reacts even without nbfc.
+  local mode="$1" profile="balanced"
+  case "$mode" in
+    quiet) profile="power-saver" ;;
+    balanced | auto) profile="balanced" ;;
+    performance | turbo) profile="performance" ;;
+  esac
+  if have powerprofilesctl; then
+    powerprofilesctl set "$profile" 2>/dev/null || true
+  fi
+  # Optional: clamp AMD APU TDP on quiet to keep fans down. Needs ryzenadj + sudo.
+  if have ryzenadj; then
+    case "$mode" in
+      quiet) ryzenadj --stapm-limit=12000 --fast-limit=12000 --slow-limit=12000 --tctl-temp=80 2>/dev/null || true ;;
+      balanced) ryzenadj --stapm-limit=25000 --fast-limit=25000 --slow-limit=25000 --tctl-temp=90 2>/dev/null || true ;;
+      performance | turbo | auto) ryzenadj --stapm-limit=35000 --fast-limit=35000 --slow-limit=35000 --tctl-temp=95 2>/dev/null || true ;;
+    esac
+  fi
+}
+
+apply_nbfc() {
+  # $1 = mode or percent. Returns 0 if nbfc handled it.
+  local arg="$1" speed=""
+  have nbfc || return 1
+  # Block writes while service is in read-only mode (-r): nbfc accepts the
+  # command but never touches EC, so Target changes and Current doesn't.
+  if nbfc status 2>/dev/null | grep -q "Read-only.*: *true"; then
+    return 1
+  fi
+  case "$arg" in
+    auto) nbfc set --auto 2>/dev/null || return 1; return 0 ;;
+    quiet) speed=30 ;;
+    balanced) speed=60 ;;
+    performance) speed=85 ;;
+    turbo) speed=100 ;;
+    [0-9]*)
+      speed="$arg"
+      ((speed < 0)) && speed=0
+      ((speed > 100)) && speed=100
+      ;;
+    *) return 1 ;;
+  esac
+  nbfc set -s "$speed" 2>/dev/null || return 1
+  return 0
+}
+
+cmd_status() {
+  local mode cpu gpu nv
+  mode="$(get_mode)"
+  cpu="$(cpu_temp)"; gpu="$(gpu_temp)"; nv="$(nvidia_temp)"
+  echo "Nitro AN515-44 | mode: $mode"
+  echo "CPU: ${cpu:-?}°C  AMD-GPU: ${gpu:-?}°C  NVIDIA: ${nv:-?}°C"
+  if have nbfc; then
+    echo "--- nbfc ---"
+    nbfc status 2>&1 | head -n 30 || echo "(nbfc service not running? sudo nbfc restart)"
+    if nbfc status 2>/dev/null | grep -q "Read-only.*: *true"; then
+      echo "(!) READ-ONLY: EC запись заблокирована. Для применения: sudo nbfc restart"
+    fi
+  else
+    echo "(nbfc-linux not installed — direct EC control unavailable)"
+    echo "run: nitro-fan-setup   (needs sudo once)"
+  fi
+  if have powerprofilesctl; then
+    echo "--- powerprofile ---"
+    powerprofilesctl get 2>/dev/null || true
+  fi
+}
+
+cmd_set_mode() {
+  local mode="$1" pct=""
+  case "$mode" in
+    auto | quiet | balanced | performance | turbo) ;;
+    *) echo "unknown mode: $mode (auto|quiet|balanced|performance|turbo)" >&2; return 1 ;;
+  esac
+  # Prefer real EC control; always also move powerprofile so stock curve follows.
+  if apply_nbfc "$mode"; then
+    set_mode "$mode"
+    apply_powerprofile_fallback "$mode"
+    echo "fans -> $mode (nbfc EC control)"
+  else
+    apply_powerprofile_fallback "$mode"
+    set_mode "$mode"
+    if ! have nbfc; then
+      echo "fans -> $mode (powerprofile fallback; install nbfc-linux for direct % control)"
+    elif nbfc status 2>/dev/null | grep -q "Read-only.*: *true"; then
+      echo "fans -> $mode (НЕ ПРИМЕНЕНО к EC: сервис в read-only! Выполни: sudo nbfc restart && sudo systemctl enable nbfc_service)" >&2
+    else
+      echo "fans -> $mode (powerprofile fallback; nbfc call failed — is service running? sudo nbfc restart)" >&2
+    fi
+  fi
+  # OSD feedback when run from popup/terminal with GUI
+  if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && have omarchy-osd; then
+    case "$mode" in
+      auto) pct=50 ;;
+      quiet) pct=30 ;;
+      balanced) pct=60 ;;
+      performance) pct=85 ;;
+      turbo) pct=100 ;;
+    esac
+    omarchy-osd -i "fan" -m "Nitro fans: $mode" -p "$pct" 2>/dev/null || true
+  fi
+}
+
+case "${1:-status}" in
+  status) cmd_status ;;
+  auto | quiet | balanced | performance | turbo | max)
+    [[ $1 == max ]] && cmd_set_mode turbo || cmd_set_mode "$1"
+    ;;
+  set)
+    pct="${2:-}"; [[ -z $pct ]] && { echo "usage: nitro-fan set <0-100>" >&2; exit 1; }
+    if apply_nbfc "$pct"; then
+      set_mode "manual-$pct"
+      echo "fans -> $pct% (nbfc)"
+      have omarchy-osd && [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && omarchy-osd -i "fan" -m "Nitro fans: $pct%" -p "$pct" 2>/dev/null || true
+    else
+      echo "manual % needs nbfc-linux (sudo nbfc restart?). Fallback modes: quiet/balanced/performance." >&2
+      exit 1
+    fi
+    ;;
+  cycle)
+    cur="$(get_mode)"
+    case "$cur" in
+      auto) cmd_set_mode quiet ;;
+      quiet) cmd_set_mode balanced ;;
+      balanced) cmd_set_mode performance ;;
+      performance) cmd_set_mode turbo ;;
+      *) cmd_set_mode auto ;;
+    esac
+    ;;
+  *) echo "usage: nitro-fan [status|auto|quiet|balanced|performance|turbo|max|set <0-100>|cycle]" >&2; exit 1 ;;
+esac

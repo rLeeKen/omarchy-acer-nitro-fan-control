@@ -5,9 +5,13 @@ set -eo pipefail
 # Nitro Fans plugin installer for Omarchy
 # Laptop: Acer Nitro AN515-44
 #
-# Installs the nitro.fans widget into ~/.config/omarchy/plugins,
-# adds it to shell.json and asks where to place the popup on the panel:
-# left / right / center — without replacing widgets of other plugins.
+# Installs:
+#   - nitro-fan from this repository into ~/.local/bin/nitro-fan
+#   - nitro.fans widget into ~/.config/omarchy/plugins
+#
+# Then adds the widget to shell.json and asks where to place the popup
+# on the Omarchy panel: left / right / center — without replacing widgets
+# of other plugins.
 ###############################################################################
 
 OMARCHY_PLUGINS_DIR="$HOME/.config/omarchy/plugins"
@@ -15,6 +19,8 @@ SHELL_JSON="$HOME/.config/omarchy/shell.json"
 PLUGIN_ID="nitro.fans"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd) || true"
 PLUGIN_SRC="$SCRIPT_DIR/plugins/$PLUGIN_ID"
+NITRO_FAN_SRC="$SCRIPT_DIR/nitro-fan"
+NITRO_FAN_DST="$HOME/.local/bin/nitro-fan"
 REPO_URL="https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
 
 echo "============================================================"
@@ -37,54 +43,27 @@ if ! have_cmd jq; then
 fi
 
 mkdir -p "$OMARCHY_PLUGINS_DIR"
+mkdir -p "$HOME/.local/bin"
 
-# -------- required packages ----------------------------------------------------
-echo "==> Checking required packages..."
-MISSING=0
-
-if ! pacman -Q nbfc >/dev/null 2>&1 && ! yay -Q nbfc >/dev/null 2>&1; then
-  echo "   [missing] nbfc        (AUR: nbfc-linux — reads fan speeds)"
-  MISSING=1
-fi
-
-if ! have_cmd nitro-fan && [ ! -x "$HOME/.local/bin/nitro-fan" ]; then
-  echo "   [missing] nitro-fan   (PATH or ~/.local/bin/nitro-fan — switches fan modes)"
-  MISSING=1
-fi
-
-if [ "$MISSING" -eq 1 ]; then
-  echo
-  read -rp "Install missing packages via yay? (y/N): " ans
-  echo
-  if [[ "$ans" =~ ^[Yy]$ ]]; then
-    if ! have_cmd yay; then
-      echo "ERROR: yay is not installed. Install yay (AUR helper) first, then re-run this script."
-      echo "See: https://github.com/Jguer/yay"
-      exit 1
-    fi
-    echo "==> Installing nbfc-linux ..."
-    yay -S --needed nbfc-linux || echo "WARNING: failed to install nbfc-linux via yay."
-    echo
-    if ! have_cmd nitro-fan && [ ! -x "$HOME/.local/bin/nitro-fan" ]; then
-      echo "WARNING: nitro-fan was not installed automatically."
-      echo "Install it manually (AUR: nitro-fan) or place the binary at ~/.local/bin/nitro-fan"
-    fi
-  else
-    echo "==> Skipping package installation. The plugin may not work without nbfc and nitro-fan."
-  fi
+# -------- install nitro-fan from this repository ------------------------------
+echo "==> Installing nitro-fan ..."
+if [ -f "$NITRO_FAN_SRC" ]; then
+  cp "$NITRO_FAN_SRC" "$NITRO_FAN_DST"
+  chmod +x "$NITRO_FAN_DST"
+  echo "   nitro-fan installed to $NITRO_FAN_DST"
 else
-  echo "   All required packages are present."
+  echo "WARNING: nitro-fan not found in this repository."
+  echo "Copy it manually to $NITRO_FAN_DST and make it executable."
 fi
+
 echo
 
 # -------- copy plugin ----------------------------------------------------------
 if [ -d "$PLUGIN_SRC" ]; then
-  # running from cloned repository
   echo "==> Copying plugin to $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
   rm -rf "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
   cp -r "$PLUGIN_SRC" "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
 else
-  # one-liner via curl: plugin not next to script — clone the repository
   echo "==> Cloning repository $REPO_URL ..."
   TMP_DIR="$(mktemp -d)"
   git clone --depth=1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1
@@ -159,4 +138,5 @@ echo "Open the popup by clicking the widget icon on the panel."
 echo
 echo "Uninstall:"
 echo "    rm -rf $OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
+echo "    rm -f $NITRO_FAN_DST"
 echo "    omarchy restart shell"

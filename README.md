@@ -23,7 +23,6 @@ Make sure the following are installed before running the installer:
 |-----------|------------------|---------|
 | Omarchy | omarchy | Shell and panel |
 | nbfc | `nbfc-linux` (AUR) | Read fan speeds |
-| nitro-fan | `~/.local/bin/nitro-fan` or AUR `nitro-fan` | Switch fan modes |
 | git | git | Clone the repository |
 | yay | yay (AUR helper) | Install AUR packages |
 | curl | curl | One-liner installation |

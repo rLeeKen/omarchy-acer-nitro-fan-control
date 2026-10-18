@@ -17,9 +17,6 @@ set -eo pipefail
 OMARCHY_PLUGINS_DIR="$HOME/.config/omarchy/plugins"
 SHELL_JSON="$HOME/.config/omarchy/shell.json"
 PLUGIN_ID="nitro.fans"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd) || true"
-PLUGIN_SRC="$SCRIPT_DIR/plugins/$PLUGIN_ID"
-NITRO_FAN_SRC="$SCRIPT_DIR/nitro-fan"
 NITRO_FAN_DST="$HOME/.local/bin/nitro-fan"
 REPO_URL="https://github.com/rLeeKen/omarchy-acer-nitro-fan-control.git"
 
@@ -45,34 +42,50 @@ fi
 mkdir -p "$OMARCHY_PLUGINS_DIR"
 mkdir -p "$HOME/.local/bin"
 
-# -------- install nitro-fan from this repository ------------------------------
+# -------- decide source directory --------------------------------------------
+# When run from a cloned repo, files are next to this script.
+# When run via curl | bash, there are no local files — clone to a temp dir.
+# Determine directory of this installer script.
+# When run via `curl | bash`, BASH_SOURCE[0] and $0 are empty —
+# in that case we fall back to cloning the repository below.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+PLUGIN_SRC="$SCRIPT_DIR/plugins/$PLUGIN_ID"
+NITRO_FAN_SRC="$SCRIPT_DIR/nitro-fan"
+
+if [ -d "$PLUGIN_SRC" ]; then
+  SOURCE_DIR="$SCRIPT_DIR"
+elif [ -f "$NITRO_FAN_SRC" ]; then
+  SOURCE_DIR="$SCRIPT_DIR"
+else
+  echo "==> Cloning repository $REPO_URL ..."
+  SOURCE_DIR="$(mktemp -d)"
+  git clone --depth=1 "$REPO_URL" "$SOURCE_DIR" >/dev/null 2>&1
+  CLONED_TO_TEMP=1
+fi
+
+# -------- install nitro-fan from repository ----------------------------------
 echo "==> Installing nitro-fan ..."
-if [ -f "$NITRO_FAN_SRC" ]; then
-  cp "$NITRO_FAN_SRC" "$NITRO_FAN_DST"
+if [ -f "$SOURCE_DIR/nitro-fan" ]; then
+  cp "$SOURCE_DIR/nitro-fan" "$NITRO_FAN_DST"
   chmod +x "$NITRO_FAN_DST"
   echo "   nitro-fan installed to $NITRO_FAN_DST"
 else
-  echo "WARNING: nitro-fan not found in this repository."
+  echo "WARNING: nitro-fan not found in repository."
   echo "Copy it manually to $NITRO_FAN_DST and make it executable."
 fi
 
 echo
 
 # -------- copy plugin ----------------------------------------------------------
-if [ -d "$PLUGIN_SRC" ]; then
-  echo "==> Copying plugin to $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
-  rm -rf "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
-  cp -r "$PLUGIN_SRC" "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
-else
-  echo "==> Cloning repository $REPO_URL ..."
-  TMP_DIR="$(mktemp -d)"
-  git clone --depth=1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1
-  echo "==> Copying plugin to $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
-  rm -rf "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
-  cp -r "$TMP_DIR/plugins/$PLUGIN_ID" "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
-  rm -rf "$TMP_DIR"
-fi
+echo "==> Copying plugin to $OMARCHY_PLUGINS_DIR/$PLUGIN_ID ..."
+rm -rf "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
+cp -r "$SOURCE_DIR/plugins/$PLUGIN_ID" "$OMARCHY_PLUGINS_DIR/$PLUGIN_ID"
 echo "   Plugin installed."
+
+# -------- clean up temp clone --------------------------------------------------
+if [ "${CLONED_TO_TEMP:-0}" = "1" ]; then
+  rm -rf "$SOURCE_DIR"
+fi
 
 # -------- backup shell.json ----------------------------------------------------
 if [ -f "$SHELL_JSON" ]; then
